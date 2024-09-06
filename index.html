@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jogo</title>
+    <style>
+        /* Cores RGB */
+        body {
+            background-color: rgb(0, 0, 0);
+            color: rgb(255, 255, 255);
+            margin: 1%;
+            overflow: hidden; /* Evita barras de rolagem */
+        }
+
+        .blocoText {
+            font-size: 20px;
+            text-align: center;
+            font-weight: bolder;
+        }
+
+        .personagem {
+            width: 64px;
+            height: 64px;
+            margin: 1%;
+            background-color: white;
+            position: absolute;
+        }
+
+        .bloco {
+            width: 750px;
+            height: 700px;
+            margin: 0 auto;
+            position: relative; /* Adiciona position relative para o contêiner */
+            border: white 3px solid;
+            overflow: hidden;
+        }
+
+        .obstaculo {
+            width: 42px;
+            height: 42px;
+            background-color: red;
+            position: absolute;
+        }
+        .blocobtn{
+            display: flex;
+            flex-direction: column;
+            width: 80px;
+            position: relative;
+            top: 50px;
+            padding: 5px 0;
+        }
+        
+
+        .bloco2{
+            justify-content: center;
+            display: flex;
+            flex-direction: row;
+        }
+
+        .align, .pontuacao, .dificuldade{
+            display: flex;
+            padding: 0px 20px;
+            flex-direction: row;
+        }
+    </style>
+</head>
+
+<body>
+<div class="bloco2" id="bloco2">
+    <div class="blocoText" id="blocoText">
+        <h1 class="titulo" id="titulo">Jogo</h1>
+        <div class="align">
+            <h1 class="pontuacao" id="pontuacao">pontuação: 0</h1>
+            <h1 class="dificuldade" id="dificuldade">Dificuldade:</h1>
+        </div>
+    </div>
+
+    <div class="blocobtn" id="blocobtn">
+        <button class="iniciar" id="iniciar">iniciar jogo</button>
+        <button class="btnLevel1" id="btnLevel1">Fácil</button>
+        <button class="btnLevel2" id="btnLevel2">Médio</button>
+        <button class="btnLevel3" id="btnLevel3">Dificil</button>
+    </div>
+</div>
+
+
+    <div class="bloco" id="bloco">
+        <div class="personagem" id="personagem"></div>
+    </div>
+
+    <script>
+        let personagem = document.getElementById("personagem");
+        let bloco = document.getElementById("bloco");
+        let taxa = 10;
+        let eixoX = 0;
+        let eixoY = 0;
+        let pontuacao = 0;
+
+        function criaObstaculo() {
+            let obstaculo = document.createElement("div");
+            obstaculo.className = "obstaculo";
+            obstaculo.style.left = Math.random() * (bloco.clientWidth - 42) + "px";
+            obstaculo.style.top = Math.random() * (bloco.clientHeight - 42) + "px";
+            bloco.appendChild(obstaculo);
+            return obstaculo;
+        }
+
+        function verificaPosicao() {
+            personagem.style.top = eixoY + "px";
+            personagem.style.left = eixoX + "px";
+        }
+
+        function movimentar(event) {
+            if (event.key === "ArrowLeft" || event.key === 'a') {
+                eixoX -= taxa;
+            } else if (event.key === "ArrowRight" || event.key === 'd') {
+                eixoX += taxa;
+            } else if (event.key === "ArrowUp" || event.key === 'w') {
+                eixoY -= taxa;
+            } else if (event.key === "ArrowDown" || event.key === 's') {
+                eixoY += taxa;
+            }
+
+            // Limites do bloco
+            const limiteEsquerdo = 0;
+            const limiteDireito = bloco.clientWidth - personagem.clientWidth;
+            const limiteSuperior = 0;
+            const limiteInferior = bloco.clientHeight - personagem.clientHeight;
+
+            if (eixoX < limiteEsquerdo) {
+                eixoX = limiteEsquerdo;
+            } else if (eixoX > limiteDireito) {
+                eixoX = limiteDireito;
+            }
+
+            if (eixoY < limiteSuperior) {
+                eixoY = limiteSuperior;
+            } else if (eixoY > limiteInferior) {
+                eixoY = limiteInferior;
+            }
+
+            verificaPosicao();
+            checarColisoes();
+        }
+
+        function seguirPersonagem(obstaculo) {
+            const posXPersonagem = eixoX + personagem.clientWidth / 2;
+            const posYPersonagem = eixoY + personagem.clientHeight / 2;
+
+            const posXObstaculo = parseInt(obstaculo.style.left, 10) + obstaculo.clientWidth / 2;
+            const posYObstaculo = parseInt(obstaculo.style.top, 10) + obstaculo.clientHeight / 2;
+
+            const velocidade = 3; // Velocidade do obstáculo
+            const dx = posXPersonagem - posXObstaculo;
+            const dy = posYPersonagem - posYObstaculo;
+
+            // Normalizar o vetor de direção
+            const distancia = Math.sqrt(dx * dx + dy * dy);
+            if (distancia === 0) return; // Evita divisão por zero
+
+            const direcaoX = (dx / distancia) * velocidade;
+            const direcaoY = (dy / distancia) * velocidade;
+
+            // Atualizar posição do obstáculo
+            obstaculo.style.left = (parseInt(obstaculo.style.left, 10) + direcaoX) + "px";
+            obstaculo.style.top = (parseInt(obstaculo.style.top, 10) + direcaoY) + "px";
+        }
+
+        function checarColisoes() {
+            const obstaculos = document.querySelectorAll('.obstaculo');
+            obstaculos.forEach(obstaculo => {
+                const rectPersonagem = personagem.getBoundingClientRect();
+                const rectObstaculo = obstaculo.getBoundingClientRect();
+
+                if (
+                    rectPersonagem.left < rectObstaculo.right &&
+                    rectPersonagem.right > rectObstaculo.left &&
+                    rectPersonagem.top < rectObstaculo.bottom &&
+                    rectPersonagem.bottom > rectObstaculo.top
+                ) {
+                    // Se houve colisão
+                    pontuacao -= 10; // Perde 10 pontos a cada colisão
+                    document.getElementById('pontuacao').innerHTML = 'pontuação: ' + pontuacao;
+                    
+                    // Remove o obstáculo da tela
+                    obstaculo.remove();
+                }
+            });
+        }
+
+        function atualizarObstaculos() {
+            const obstaculos = document.querySelectorAll('.obstaculo');
+            obstaculos.forEach(obstaculo => seguirPersonagem(obstaculo));
+        }
+
+        function criarObstaculoPeriodicamente() {
+            criaObstaculo();
+        }
+
+        function subirPontos() {
+            pontuacao += 3;
+            document.getElementById('pontuacao').innerHTML = 'pontuação: ' + pontuacao;
+
+        }
+
+        document.addEventListener("keydown", movimentar);
+        setInterval(subirPontos, 1000); // Cria um novo obstáculo a cada 3 segundos
+        setInterval(criarObstaculoPeriodicamente, 3000); // Cria um novo obstáculo a cada 3 segundos
+        setInterval(atualizarObstaculos, 50); // Atualiza a posição dos obstáculos a cada 50 ms
+    </script>
+
+</body>
+
+</html>
